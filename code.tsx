@@ -707,7 +707,7 @@ function Widget() {
             }));
             figma.ui.postMessage({
               type: 'share',
-              viewerUrl: 'https://akhil-kumar-ak.github.io/ux-audit-widget/viewer.html',
+              viewerUrl: 'https://akhil-kumar-ak.github.io/ux-audit-widget/',
               payload: {
                 projectTitle,
                 projectSubtitle,

@@ -367,7 +367,7 @@ function cycleStatus(issueId, scrId) {
 function copyUpdatedLink() {
   try {
     var encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
-    var url = 'https://akhil-kumar-ak.github.io/ux-audit-widget/viewer.html' + '#' + encoded;
+    var url = 'https://akhil-kumar-ak.github.io/ux-audit-widget/' + '#' + encoded;
     navigator.clipboard.writeText(url).then(function() {
       var btn = document.getElementById('copy-link-btn');
       btn.textContent = '✓ Copied!';
