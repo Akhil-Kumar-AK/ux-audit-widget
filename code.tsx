@@ -707,7 +707,7 @@ function Widget() {
             }));
             figma.ui.postMessage({
               type: 'share',
-              viewerUrl: 'https://nasdaq-designportal.figma.site/',
+              viewerUrl: 'https://akhil-kumar-ak.github.io/ux-audit-widget/viewer.html',
               payload: {
                 projectTitle,
                 projectSubtitle,
