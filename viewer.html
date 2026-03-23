@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>UX Audit — Developer View</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+body{background:#f4f6f8;min-height:100vh;color:#212121;font-size:13px}
+
+/* HEADER */
+.header{background:linear-gradient(90deg,#000 0%,#0090ba 100%);padding:16px 32px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.25)}
+.header-logo{font-size:18px;font-weight:800;color:#fff;letter-spacing:-0.5px}
+.header-logo span{color:#00acc1}
+.header-sep{width:1px;height:32px;background:rgba(255,255,255,0.2)}
+.header-title{flex:1}
+.header-title h1{font-size:15px;font-weight:700;color:#fff}
+.header-title p{font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px}
+.header-badge{background:rgba(0,172,193,0.2);border:1px solid rgba(0,172,193,0.4);border-radius:20px;padding:5px 14px;font-size:11px;font-weight:600;color:#80deea;white-space:nowrap}
+.copy-btn{background:#00acc1;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap;transition:background 0.15s}
+.copy-btn:hover{background:#00838f}
+.copy-btn.copied{background:#2e7d32}
+
+/* TABS */
+.tabs-bar{background:#fff;border-bottom:1px solid #e0e4e8;padding:0 32px;display:flex;gap:4px;position:sticky;top:57px;z-index:99}
+.tab-btn{padding:12px 18px;font-size:13px;font-weight:500;color:#757575;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:all 0.15s}
+.tab-btn:hover{color:#00acc1}
+.tab-btn.active{color:#00838f;font-weight:700;border-bottom-color:#00acc1}
+.tab-count{background:#e0f7fa;color:#00838f;border-radius:10px;padding:1px 7px;font-size:11px;font-weight:700;margin-left:5px}
+
+/* STATS BAR */
+.stats-bar{display:flex;align-items:center;gap:12px;padding:14px 32px;background:#fff;border-bottom:1px solid #e8e8e8}
+.stat-pill{display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
+.stat-pill.total{background:#e0f7fa;border-color:#b2ebf2;color:#00838f}
+.stat-pill.medium{background:#fff8e1;border-color:#ffe082;color:#f5a623}
+.stat-pill.high{background:#ffebee;border-color:#ffcdd2;color:#e53935}
+.stat-pill.closed{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.dot.medium{background:#f5a623}
+.dot.high{background:#e53935}
+.dot.closed{background:#4caf50}
+.stats-spacer{flex:1}
+
+/* CONTENT */
+.content{max-width:1200px;margin:0 auto;padding:24px 32px;display:flex;flex-direction:column;gap:16px}
+
+/* APL CARD */
+.apl-card{background:#fff;border:1px solid #e0e4e8;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06)}
+.apl-header{display:flex;align-items:center;gap:12px;padding:14px 18px;background:#fafafa;border-bottom:1px solid #e8e8e8;cursor:pointer;user-select:none}
+.apl-header:hover{background:#f4f6f8}
+.apl-no{background:#212121;color:#fff;border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;letter-spacing:0.5px;flex-shrink:0}
+.apl-task{font-size:14px;font-weight:600;color:#212121;flex:1}
+.apl-meta{display:flex;align-items:center;gap:8px}
+.apl-screens{font-size:11px;color:#9e9e9e}
+.row-status-badge{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;border:1px solid}
+.row-status-badge.open{background:#f5f5f5;border-color:#e0e0e0;color:#9e9e9e}
+.row-status-badge.in-progress{background:#fff8e1;border-color:#ffe082;color:#f9a825}
+.row-status-badge.completed{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32}
+.sev-mini{padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;border:1px solid}
+.sev-mini.medium{background:#fff8e1;border-color:#ffe082;color:#f5a623}
+.sev-mini.high{background:#ffebee;border-color:#ffcdd2;color:#e53935}
+.chevron{font-size:11px;color:#9e9e9e;transition:transform 0.2s;flex-shrink:0}
+.chevron.open{transform:rotate(90deg)}
+
+/* SCREENS */
+.screens-wrap{display:none}
+.screens-wrap.open{display:block}
+.screen-section{border-bottom:1px solid #f0f0f0}
+.screen-section:last-child{border-bottom:none}
+.screen-label{display:flex;align-items:center;gap:8px;padding:10px 18px 6px;background:#f8f9fa;border-bottom:1px solid #f0f0f0}
+.screen-label-icon{width:20px;height:20px;background:#e0f7fa;border-radius:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.screen-label-name{font-size:11px;font-weight:700;color:#00838f;text-transform:uppercase;letter-spacing:0.4px}
+.screen-label-count{font-size:11px;color:#9e9e9e}
+
+/* ISSUES TABLE */
+.issues-table{width:100%}
+.issues-table-head{display:grid;grid-template-columns:36px 1fr 90px 90px 110px;padding:6px 18px;background:#f5f5f5;border-bottom:1px solid #e8e8e8}
+.issues-table-head span{font-size:10px;font-weight:700;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px}
+.issue-row{display:grid;grid-template-columns:36px 1fr 90px 90px 110px;padding:11px 18px;border-bottom:1px solid #f5f5f5;align-items:center;transition:background 0.1s}
+.issue-row:last-child{border-bottom:none}
+.issue-row:hover{background:#fafcfc}
+.issue-row.closed-row{opacity:0.65;background:#f9fffe}
+.pin-badge{width:22px;height:22px;border-radius:50%;background:#00acc1;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.issue-row.closed-row .pin-badge{background:#4caf50}
+.issue-info{min-width:0}
+.issue-title{font-size:12px;font-weight:600;color:#212121;margin-bottom:2px}
+.issue-row.closed-row .issue-title{text-decoration:line-through;color:#9e9e9e}
+.issue-desc{font-size:11px;color:#757575;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.issue-author{font-size:11px;color:#bdbdbd;margin-top:2px}
+
+/* STATUS TOGGLE */
+.status-toggle{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:10px;font-size:11px;font-weight:700;cursor:pointer;border:1px solid;transition:all 0.15s;user-select:none}
+.status-toggle:hover{filter:brightness(0.92);transform:scale(1.03)}
+.status-toggle.open{background:#f5f5f5;border-color:#e0e0e0;color:#757575}
+.status-toggle.in-progress{background:#fff8e1;border-color:#ffe082;color:#f9a825}
+.status-toggle.closed{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32}
+
+/* EMPTY */
+.no-issues{padding:20px 18px;text-align:center;color:#9e9e9e;font-size:12px}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:80px 24px;color:#9e9e9e}
+.empty-state h2{font-size:18px;font-weight:600;color:#424242;margin-bottom:8px}
+.empty-state p{font-size:13px;line-height:1.6}
+
+/* FOOTER */
+.footer{text-align:center;padding:24px;font-size:11px;color:#bdbdbd}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:#212121;color:#fff;padding:10px 20px;border-radius:8px;font-size:12px;font-weight:500;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-logo">UX<span>Audit</span></div>
+  <div class="header-sep"></div>
+  <div class="header-title">
+    <h1 id="page-title">UX Audit Review</h1>
+    <p id="page-subtitle">Developer View — click a status to toggle it</p>
+  </div>
+  <div class="header-badge" id="gen-date">Loading...</div>
+  <button class="copy-btn" id="copy-link-btn" onclick="copyUpdatedLink()">
+    <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6">
+      <rect x="4" y="4" width="8" height="8" rx="1.5"/>
+      <path d="M2 10V3a1 1 0 011-1h7"/>
+    </svg>
+    Copy Updated Link
+  </button>
+</header>
+
+<div class="tabs-bar" id="tabs-bar"></div>
+
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-pill total">Loading…</div>
+</div>
+
+<div class="content" id="content"></div>
+
+<div class="footer">Generated by UX Audit Widget &nbsp;·&nbsp; Share with developers for issue tracking</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Decode payload ─────────────────────────────────────────────────────────
+var payload = null;
+var activeTabKey = 'service';
+
+try {
+  var hash = location.hash.replace(/^#/, '');
+  if (hash) {
+    payload = JSON.parse(decodeURIComponent(atob(hash)));
+  }
+} catch(e) {
+  console.error('Failed to decode payload', e);
+}
+
+if (!payload) {
+  document.getElementById('content').innerHTML = `
+    <div class="empty-state">
+      <h2>No audit data found</h2>
+      <p>This link may be expired or invalid.<br>Ask the UX designer to generate a new share link from the Figma widget.</p>
+    </div>`;
+  document.getElementById('gen-date').textContent = 'Invalid link';
+  document.getElementById('stats-bar').innerHTML = '';
+  document.getElementById('tabs-bar').innerHTML = '';
+} else {
+  document.getElementById('page-title').textContent = payload.projectTitle || 'UX Audit Review';
+  document.getElementById('page-subtitle').textContent = (payload.projectSubtitle || '') + ' — Developer View';
+  document.getElementById('gen-date').textContent = 'Generated ' + (payload.generatedAt || '');
+
+  renderTabs();
+  renderStats();
+  renderContent();
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────
+function renderTabs() {
+  var bar = document.getElementById('tabs-bar');
+  var tabs = [
+    { key: 'service', label: 'Wireframes Defect' },
+    { key: 'framework', label: 'Component Defect' },
+  ];
+  bar.innerHTML = tabs.map(function(t) {
+    var rows = (payload[t.key + 'Rows'] || []);
+    var cnt = rows.reduce(function(s, r) { return s + allIssues(r).length; }, 0);
+    return '<div class="tab-btn' + (activeTabKey === t.key ? ' active' : '') +
+      '" onclick="switchTab(\'' + t.key + '\')">' + t.label +
+      '<span class="tab-count">' + cnt + '</span></div>';
+  }).join('');
+}
+
+function switchTab(key) {
+  activeTabKey = key;
+  renderTabs();
+  renderStats();
+  renderContent();
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function allIssues(row) {
+  return (row.screens || []).reduce(function(acc, s) {
+    return acc.concat(s.issueItems || []);
+  }, []);
+}
+
+function rowStatus(row) {
+  var issues = allIssues(row);
+  if (issues.length === 0) return 'open';
+  var closed = issues.filter(function(i) { return i.status === 'closed'; }).length;
+  if (closed === issues.length) return 'completed';
+  if (closed > 0) return 'in-progress';
+  return 'open';
+}
+
+function statusLabel(s) {
+  return s === 'closed' ? '✓ Closed' : s === 'in-progress' ? '⟳ In Progress' : '○ Open';
+}
+
+// ── Stats ──────────────────────────────────────────────────────────────────
+function renderStats() {
+  var rows = payload[activeTabKey + 'Rows'] || [];
+  var issues = rows.reduce(function(a, r) { return a.concat(allIssues(r)); }, []);
+  var total = issues.length;
+  var med = issues.filter(function(i) { return i.severity === 'medium'; }).length;
+  var high = issues.filter(function(i) { return i.severity === 'high'; }).length;
+  var closed = issues.filter(function(i) { return i.status === 'closed'; }).length;
+  document.getElementById('stats-bar').innerHTML =
+    '<div class="stat-pill total">Total Issues: ' + total + '</div>' +
+    '<div class="stat-pill medium"><span class="dot medium"></span> Medium: ' + med + '</div>' +
+    '<div class="stat-pill high"><span class="dot high"></span> High: ' + high + '</div>' +
+    '<div class="stat-pill closed"><span class="dot closed"></span> Closed: ' + closed + '</div>' +
+    '<div class="stats-spacer"></div>';
+}
+
+// ── Content ────────────────────────────────────────────────────────────────
+function renderContent() {
+  var rows = payload[activeTabKey + 'Rows'] || [];
+  var content = document.getElementById('content');
+  content.innerHTML = '';
+
+  if (rows.length === 0) {
+    content.innerHTML = '<div class="empty-state"><h2>No items</h2><p>No rows found in this tab.</p></div>';
+    return;
+  }
+
+  rows.forEach(function(row) {
+    content.appendChild(buildAplCard(row));
+  });
+}
+
+function buildAplCard(row) {
+  var issues = allIssues(row);
+  var status = rowStatus(row);
+  var med = issues.filter(function(i) { return i.severity === 'medium'; }).length;
+  var high = issues.filter(function(i) { return i.severity === 'high'; }).length;
+  var screenCount = (row.screens || []).length;
+
+  var card = document.createElement('div');
+  card.className = 'apl-card';
+  card.id = 'apl-' + row.id;
+
+  var statusLabels = { open: 'Open', 'in-progress': 'In Progress', completed: 'Completed' };
+
+  card.innerHTML =
+    '<div class="apl-header" onclick="toggleCard(\'' + row.id + '\')">' +
+      '<span class="apl-no">' + esc(row.aplNo) + '</span>' +
+      '<span class="apl-task">' + esc(row.screenName || '—') + '</span>' +
+      '<div class="apl-meta">' +
+        (med > 0 ? '<span class="sev-mini medium">' + med + ' Medium</span>' : '') +
+        (high > 0 ? '<span class="sev-mini high">' + high + ' High</span>' : '') +
+        '<span class="apl-screens">' + screenCount + ' screen' + (screenCount !== 1 ? 's' : '') + '</span>' +
+        '<span class="row-status-badge ' + status + '" id="row-status-' + row.id + '">' + statusLabels[status] + '</span>' +
+      '</div>' +
+      '<span class="chevron open" id="chevron-' + row.id + '">&#9654;</span>' +
+    '</div>' +
+    '<div class="screens-wrap open" id="screens-' + row.id + '">' +
+      buildScreensSections(row) +
+    '</div>';
+
+  return card;
+}
+
+function buildScreensSections(row) {
+  if ((row.screens || []).length === 0) {
+    return '<div class="no-issues">No screens added.</div>';
+  }
+  return row.screens.map(function(scr) {
+    var issues = scr.issueItems || [];
+    return '<div class="screen-section">' +
+      '<div class="screen-label">' +
+        '<div class="screen-label-icon"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="#00acc1" stroke-width="1.5"><rect x="1" y="1" width="10" height="10" rx="2"/></svg></div>' +
+        '<span class="screen-label-name">' + esc(scr.screenName || 'Untitled Screen') + '</span>' +
+        '<span class="screen-label-count">(' + issues.length + ' issue' + (issues.length !== 1 ? 's' : '') + ')</span>' +
+      '</div>' +
+      buildIssuesTable(scr.id, issues) +
+    '</div>';
+  }).join('');
+}
+
+function buildIssuesTable(scrId, issues) {
+  if (issues.length === 0) {
+    return '<div class="no-issues">No issues on this screen.</div>';
+  }
+  return '<div class="issues-table">' +
+    '<div class="issues-table-head">' +
+      '<span>#</span><span>Issue</span><span>Severity</span><span>By</span><span>Status</span>' +
+    '</div>' +
+    issues.map(function(issue) {
+      var st = issue.status || 'open';
+      return '<div class="issue-row ' + (st === 'closed' ? 'closed-row' : '') + '" id="issue-row-' + issue.id + '">' +
+        '<div class="pin-badge">' + issue.pinNumber + '</div>' +
+        '<div class="issue-info">' +
+          '<div class="issue-title">' + esc(issue.title || 'Untitled') + '</div>' +
+          (issue.description ? '<div class="issue-desc">' + esc(issue.description) + '</div>' : '') +
+          '<div class="issue-author">by ' + esc(issue.createdBy || '') + '</div>' +
+        '</div>' +
+        '<span class="sev-mini ' + issue.severity + '">' + cap(issue.severity) + '</span>' +
+        '<span></span>' +
+        '<span class="status-toggle ' + st + '" onclick="cycleStatus(\'' + issue.id + '\',\'' + scrId + '\')" title="Click to change status">' + statusLabel(st) + '</span>' +
+      '</div>';
+    }).join('') +
+  '</div>';
+}
+
+// ── Interactions ────────────────────────────────────────────────────────────
+function toggleCard(rowId) {
+  var wrap = document.getElementById('screens-' + rowId);
+  var chev = document.getElementById('chevron-' + rowId);
+  var isOpen = wrap.classList.contains('open');
+  wrap.classList.toggle('open', !isOpen);
+  chev.classList.toggle('open', !isOpen);
+}
+
+function cycleStatus(issueId, scrId) {
+  var order = ['open', 'in-progress', 'closed'];
+  var rows = payload[activeTabKey + 'Rows'] || [];
+
+  // Find and update issue
+  for (var ri = 0; ri < rows.length; ri++) {
+    var row = rows[ri];
+    var screens = row.screens || [];
+    for (var si = 0; si < screens.length; si++) {
+      var scr = screens[si];
+      if (scr.id !== scrId) continue;
+      var items = scr.issueItems || [];
+      for (var ii = 0; ii < items.length; ii++) {
+        if (items[ii].id === issueId) {
+          var cur = items[ii].status || 'open';
+          items[ii].status = order[(order.indexOf(cur) + 1) % order.length];
+          // Re-render just this row card
+          var card = document.getElementById('apl-' + row.id);
+          if (card) {
+            var newCard = buildAplCard(row);
+            card.replaceWith(newCard);
+          }
+          // Update stats
+          renderStats();
+          return;
+        }
+      }
+    }
+  }
+}
+
+function copyUpdatedLink() {
+  try {
+    var encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
+    var url = 'https://nasdaq-designportal.figma.site/' + '#' + encoded;
+    navigator.clipboard.writeText(url).then(function() {
+      var btn = document.getElementById('copy-link-btn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      showToast('Updated link copied to clipboard');
+      setTimeout(function() {
+        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/></svg> Copy Updated Link';
+        btn.classList.remove('copied');
+      }, 2500);
+    });
+  } catch(e) {
+    showToast('Could not copy — try right-clicking the address bar');
+  }
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function() { t.classList.remove('show'); }, 2800);
+}
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+</script>
+</body>
+</html>

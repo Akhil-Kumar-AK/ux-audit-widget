@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>UX Audit — Issues</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+  body{width:1100px;height:750px;display:flex;flex-direction:column;overflow:hidden;background:#fff;font-size:13px}
+
+  /* TOP BAR */
+  .top-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid #e8e8e8;background:#fff;flex-shrink:0}
+  .total-badge{display:flex;align-items:center;gap:6px;background:#e0f7fa;border:1px solid #b2ebf2;border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600;color:#00838f}
+  .row-label{font-size:13px;color:#424242;font-weight:500}
+  .row-label span{color:#9e9e9e;font-weight:400}
+  .top-spacer{flex:1}
+  .sev-badge{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600;border:1px solid}
+  .sev-badge.medium{background:#fff8e1;border-color:#ffe082;color:#f5a623}
+  .sev-badge.high{background:#ffebee;border-color:#ffcdd2;color:#e53935}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+  .dot.medium{background:#f5a623}
+  .dot.high{background:#e53935}
+
+  /* SCREEN TABS */
+  .screen-tabs-bar{display:flex;align-items:center;background:#f4f6f8;border-bottom:1px solid #e0e4e8;flex-shrink:0;overflow-x:auto;overflow-y:hidden;padding:8px 12px;gap:6px}
+  .screen-tabs-bar::-webkit-scrollbar{height:3px}
+  .screen-tabs-bar::-webkit-scrollbar-thumb{background:#b2ebf2;border-radius:2px}
+  .tabs-scroll-area{display:flex;align-items:center;gap:6px;flex:1;overflow-x:auto;overflow-y:hidden}
+  .tabs-scroll-area::-webkit-scrollbar{display:none}
+  .screen-tab{display:flex;align-items:center;gap:5px;padding:6px 11px;font-size:12px;font-weight:500;color:#616161;cursor:pointer;white-space:nowrap;flex-shrink:0;user-select:none;min-width:0;background:#fff;border:1px solid #e0e0e0;border-radius:20px;transition:all 0.15s;box-shadow:0 1px 2px rgba(0,0,0,0.04)}
+  .screen-tab:hover{color:#00acc1;border-color:#b2ebf2;background:#f0fafb;box-shadow:0 1px 4px rgba(0,172,193,0.12)}
+  .screen-tab.active{color:#fff;font-weight:600;background:#00acc1;border-color:#00acc1;box-shadow:0 2px 8px rgba(0,172,193,0.3)}
+  .screen-tab.active .tab-issue-badge{background:rgba(255,255,255,0.25);color:#fff}
+  .tab-name-static{display:flex;align-items:center;gap:5px;max-width:150px}
+  .tab-name-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tab-issue-badge{background:#e0f7fa;color:#00838f;border-radius:10px;padding:1px 6px;font-size:10px;font-weight:700;flex-shrink:0}
+  .tab-name-input{border:1px solid #00acc1;border-radius:4px;padding:2px 6px;font-size:12px;font-weight:600;color:#212121;outline:none;width:110px;background:#fff;box-shadow:0 0 0 2px rgba(0,172,193,0.12)}
+  .tab-close{width:15px;height:15px;border-radius:50%;background:none;border:none;cursor:pointer;color:rgba(0,0,0,0.3);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;padding:0;opacity:0;transition:opacity 0.15s;flex-shrink:0}
+  .screen-tab.active .tab-close{color:rgba(255,255,255,0.7)}
+  .screen-tab:hover .tab-close{opacity:1}
+  .tab-close:hover{background:rgba(229,57,53,0.12) !important;color:#e53935 !important}
+  .screen-tab.active .tab-close:hover{background:rgba(255,255,255,0.2) !important;color:#fff !important}
+  .tabs-add-btn{display:flex;align-items:center;gap:6px;padding:7px 14px;font-size:12px;font-weight:600;color:#fff;cursor:pointer;background:#00acc1;border:none;border-radius:6px;white-space:nowrap;flex-shrink:0;margin-left:auto;box-shadow:0 2px 6px rgba(0,172,193,0.3);transition:background 0.15s,box-shadow 0.15s}
+  .tabs-add-btn:hover{background:#00838f;box-shadow:0 3px 10px rgba(0,172,193,0.4)}
+
+  /* MAIN SPLIT */
+  .main{display:flex;flex:1;overflow:hidden}
+
+  /* LEFT PANEL */
+  .left-panel{width:300px;flex-shrink:0;display:flex;flex-direction:column;border-right:1px solid #e8e8e8;overflow:hidden;transition:width 0.25s ease,min-width 0.25s ease}
+  .left-panel.collapsed{width:36px;min-width:36px}
+  .left-panel.collapsed .issues-header-inner,.left-panel.collapsed .issues-list{display:none}
+  .issues-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e8e8e8;flex-shrink:0;background:#f8f9fa;gap:8px}
+  .left-panel.collapsed .issues-header{flex-direction:column;align-items:center;padding:10px 6px;height:100%;justify-content:flex-start;gap:10px;border-bottom:none;border-right:none}
+  .issues-header-inner{display:flex;align-items:center;justify-content:space-between;flex:1;gap:8px}
+  .issues-header h3{font-size:12px;font-weight:700;color:#424242;text-transform:uppercase;letter-spacing:0.5px}
+  .btn-collapse{background:none;border:1px solid #e0e0e0;border-radius:4px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#9e9e9e;flex-shrink:0;padding:0;transition:color 0.15s,background 0.15s}
+  .btn-collapse:hover{background:#f0f9ff;border-color:#00acc1;color:#00acc1}
+  .collapsed-label{display:none;writing-mode:vertical-lr;transform:rotate(180deg);font-size:11px;font-weight:700;color:#9e9e9e;text-transform:uppercase;letter-spacing:0.5px;white-space:nowrap;margin-top:4px}
+  .left-panel.collapsed .collapsed-label{display:block}
+  .btn-add-issue{background:#00acc1;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px}
+  .btn-add-issue:hover{background:#00838f}
+  .issues-list{flex:1;overflow-y:auto;padding:8px}
+  .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;padding:24px;text-align:center}
+  .empty-icon{width:52px;height:52px;background:#f0f9ff;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+  .empty-title{font-size:14px;font-weight:600;color:#212121}
+  .empty-sub{font-size:12px;color:#9e9e9e;line-height:1.5}
+  .btn-add-first{background:#00acc1;color:#fff;border:none;border-radius:6px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;margin-top:4px}
+  .btn-add-first:hover{background:#00838f}
+
+  /* ISSUE CARD */
+  .issue-card{background:#fff;border:1px solid #e8e8e8;border-radius:8px;padding:12px;margin-bottom:8px;position:relative}
+  .issue-card:hover{border-color:#00acc1;box-shadow:0 1px 4px rgba(0,172,193,0.15)}
+  .issue-card.status-closed{background:#f9fffe;border-color:#c8e6c9;opacity:0.82}
+  .issue-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  /* Status pill */
+  .issue-status{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:10px;font-size:10px;font-weight:700;cursor:pointer;border:1px solid;user-select:none;transition:all 0.15s;flex-shrink:0}
+  .issue-status:hover{filter:brightness(0.93)}
+  .issue-status.open{background:#f5f5f5;border-color:#e0e0e0;color:#757575}
+  .issue-status.in-progress{background:#fff8e1;border-color:#ffe082;color:#f9a825}
+  .issue-status.closed{background:#e8f5e9;border-color:#a5d6a7;color:#2e7d32}
+  .issue-title-text.closed{text-decoration:line-through;color:#9e9e9e}
+  .pin-badge{width:22px;height:22px;border-radius:50%;background:#00acc1;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .severity-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+  .severity-badge.medium{background:#fff8e1;color:#f5a623;border:1px solid #ffe082}
+  .severity-badge.high{background:#ffebee;color:#e53935;border:1px solid #ffcdd2}
+  .issue-title-text{font-size:12px;font-weight:600;color:#212121;flex:1}
+  .issue-desc{font-size:11px;color:#757575;line-height:1.4;margin-top:4px}
+  .issue-by{font-size:10px;color:#bdbdbd;margin-top:6px}
+  .issue-card.has-pin{cursor:pointer}
+  .issue-card.has-pin:hover .pin-badge{background:#00838f;transform:scale(1.1)}
+  .pin-nav-hint{font-size:10px;color:#b2ebf2;margin-top:4px;display:none}
+  .issue-card.has-pin:hover .pin-nav-hint{display:block}
+  .issue-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity 0.15s}
+  .issue-card:hover .issue-actions{opacity:1}
+  .issue-btn{background:none;border:1px solid #e0e0e0;border-radius:4px;padding:3px 6px;font-size:10px;cursor:pointer;color:#757575}
+  .issue-btn:hover{background:#f5f5f5}
+  .issue-btn.delete{border-color:#ffcdd2;color:#e53935}
+  .issue-btn.delete:hover{background:#ffebee}
+
+  /* ISSUE FORM */
+  .issue-form{background:#f8fdfe;border:1px solid #b2ebf2;border-radius:8px;padding:14px;margin-bottom:8px}
+  .form-row{margin-bottom:10px}
+  .form-label{font-size:11px;font-weight:600;color:#424242;margin-bottom:4px;display:block}
+  .form-input{width:100%;border:1px solid #e0e0e0;border-radius:5px;padding:7px 10px;font-size:12px;color:#212121;outline:none}
+  .form-input:focus{border-color:#00acc1;box-shadow:0 0 0 2px rgba(0,172,193,0.12)}
+  .form-textarea{width:100%;border:1px solid #e0e0e0;border-radius:5px;padding:7px 10px;font-size:12px;color:#212121;outline:none;resize:vertical;min-height:60px}
+  .form-textarea:focus{border-color:#00acc1;box-shadow:0 0 0 2px rgba(0,172,193,0.12)}
+  .sev-toggle{display:flex;gap:6px}
+  .sev-opt{flex:1;text-align:center;padding:6px;border-radius:5px;border:1px solid #e0e0e0;cursor:pointer;font-size:11px;font-weight:600;transition:all 0.15s}
+  .sev-opt.medium.selected{background:#fff8e1;border-color:#f5a623;color:#f5a623}
+  .sev-opt.high.selected{background:#ffebee;border-color:#e53935;color:#e53935}
+  .sev-opt:not(.selected){color:#9e9e9e}
+  .form-btns{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .btn-cancel{background:#fff;border:1px solid #e0e0e0;color:#757575;border-radius:5px;padding:6px 14px;font-size:12px;cursor:pointer}
+  .btn-save-issue{background:#00acc1;color:#fff;border:none;border-radius:5px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer}
+  .btn-save-issue:hover{background:#00838f}
+
+  /* RIGHT PANEL */
+  .right-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+  .toolbar{display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid #e8e8e8;flex-shrink:0;background:#fff}
+  .btn-toolbar{background:#fff;border:1px solid #e0e0e0;border-radius:5px;padding:5px 12px;font-size:12px;cursor:pointer;color:#424242;display:flex;align-items:center;gap:5px}
+  .btn-toolbar:hover{background:#f5f5f5;border-color:#00acc1;color:#00acc1}
+  .btn-toolbar.active{background:#e0f7fa;border-color:#00acc1;color:#00838f}
+  .toolbar-sep{width:1px;height:20px;background:#e8e8e8}
+  .zoom-controls{display:flex;align-items:center;gap:2px;margin-left:auto;background:#f5f5f5;border:1px solid #e0e0e0;border-radius:6px;padding:2px}
+  .btn-zoom{width:28px;height:26px;border:none;border-radius:4px;background:transparent;cursor:pointer;font-size:17px;color:#424242;display:flex;align-items:center;justify-content:center;padding:0;font-weight:400}
+  .btn-zoom:hover{background:#fff;color:#00acc1}
+  .zoom-pct{font-size:12px;color:#616161;min-width:42px;text-align:center;cursor:pointer;padding:0 4px;line-height:26px;font-weight:600;border-radius:4px}
+  .zoom-pct:hover{background:#fff;color:#00acc1}
+
+  /* CANVAS */
+  .canvas-area{flex:1;overflow:hidden;position:relative;background:#f0f0f0}
+  .pin-mode-banner{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(0,172,193,0.92);color:#fff;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600;pointer-events:none;z-index:30;display:none;white-space:nowrap}
+  .canvas-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:24px}
+  .upload-box{background:#f8fbfe;border:2px dashed #b2ebf2;border-radius:12px;padding:28px 36px;text-align:center;cursor:pointer;width:340px}
+  .upload-box:hover{border-color:#00acc1;background:#e8f8fb}
+  .upload-icon{width:40px;height:40px;margin:0 auto 12px}
+  .upload-box h4{font-size:14px;font-weight:600;color:#212121;margin-bottom:8px}
+  .upload-box p{font-size:12px;color:#9e9e9e;line-height:1.7}
+  .kbd{background:#e0e0e0;border-radius:3px;padding:1px 6px;font-family:monospace;font-size:11px;color:#424242}
+  .link{color:#00acc1;font-weight:600}
+  #file-input{display:none}
+
+  #canvas-scroll{display:none;width:100%;height:100%;overflow:auto;background:#e8e8e8}
+  #canvas-frame{position:relative;display:inline-block;margin:20px;line-height:0}
+  #canvas-frame img{display:block;max-width:none;user-select:none;-webkit-user-drag:none;cursor:default}
+  #canvas-frame.pin-active img{cursor:crosshair}
+  #pins-container{position:absolute;top:0;left:0;pointer-events:none}
+  .pin-marker{position:absolute;transform:translate(-50%,-50%);width:26px;height:26px;border-radius:50%;background:#00acc1;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:grab;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.28);z-index:10;transition:transform 0.15s,box-shadow 0.15s;pointer-events:auto;white-space:nowrap;user-select:none}
+  .pin-marker:hover{transform:translate(-50%,-50%) scale(1.15);box-shadow:0 4px 12px rgba(0,172,193,0.5)}
+  .pin-marker.dragging{cursor:grabbing !important;transform:translate(-50%,-50%) scale(1.25);box-shadow:0 6px 20px rgba(0,172,193,0.6);z-index:100;transition:none}
+  .pin-marker.highlighted{animation:pin-pulse 1.2s ease-out}
+  @keyframes pin-pulse{0%{transform:translate(-50%,-50%) scale(1.6);box-shadow:0 0 0 8px rgba(0,172,193,0.4)}50%{transform:translate(-50%,-50%) scale(1.3);box-shadow:0 0 0 4px rgba(0,172,193,0.2)}100%{transform:translate(-50%,-50%) scale(1);box-shadow:0 2px 6px rgba(0,0,0,0.28)}}
+
+  /* BOTTOM BAR */
+  .bottom-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid #e8e8e8;background:#fff;flex-shrink:0}
+  .btn-back{background:#fff;border:1px solid #e0e0e0;color:#424242;border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .btn-back:hover{background:#f5f5f5;border-color:#9e9e9e}
+  .bottom-info{font-size:12px;color:#9e9e9e}
+  .btn-save{background:#00acc1;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+  .btn-save:hover{background:#00838f}
+
+  /* SHARE MODAL */
+  .share-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:999;display:none}
+  .share-overlay.visible{display:flex}
+  .share-modal{background:#fff;border-radius:12px;width:480px;box-shadow:0 8px 40px rgba(0,0,0,0.18);overflow:hidden}
+  .share-modal-header{display:flex;align-items:center;gap:12px;padding:16px 20px;background:linear-gradient(90deg,#000,#0090ba);border-bottom:1px solid #e0e0e0}
+  .share-modal-header h2{font-size:14px;font-weight:700;color:#fff;flex:1}
+  .share-modal-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:20px;line-height:1;padding:0}
+  .share-modal-close:hover{color:#fff}
+  .share-modal-body{padding:20px}
+  .share-step{display:flex;gap:12px;margin-bottom:16px}
+  .share-step-num{width:24px;height:24px;border-radius:50%;background:#00acc1;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+  .share-step-content label{display:block;font-size:12px;font-weight:600;color:#424242;margin-bottom:6px}
+  .share-step-content p{font-size:11px;color:#9e9e9e;line-height:1.5;margin-top:4px}
+  .share-url-row{display:flex;gap:6px}
+  .share-url-input{flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:8px 10px;font-size:11px;color:#212121;outline:none;font-family:monospace;background:#f8f9fa}
+  .share-url-input:focus{border-color:#00acc1;background:#fff}
+  .btn-copy-link{background:#00acc1;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0}
+  .btn-copy-link:hover{background:#00838f}
+  .btn-copy-link.copied{background:#2e7d32}
+  .share-viewer-row{display:flex;gap:6px;margin-bottom:4px}
+  .share-viewer-input{flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:7px 10px;font-size:12px;color:#212121;outline:none}
+  .share-viewer-input:focus{border-color:#00acc1;box-shadow:0 0 0 2px rgba(0,172,193,0.12)}
+  .btn-save-url{background:#f5f5f5;border:1px solid #e0e0e0;color:#424242;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
+  .btn-save-url:hover{background:#e0f7fa;border-color:#00acc1;color:#00838f}
+  .share-divider{height:1px;background:#f0f0f0;margin:16px 0}
+  .share-info-box{background:#f0fafb;border:1px solid #b2ebf2;border-radius:8px;padding:12px;font-size:11px;color:#00838f;line-height:1.6}
+  .share-info-box strong{font-weight:700}
+  .share-modal-footer{display:flex;justify-content:flex-end;padding:12px 20px;border-top:1px solid #f0f0f0}
+  .btn-share-close{background:#00acc1;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:12px;font-weight:600;cursor:pointer}
+  .btn-share-close:hover{background:#00838f}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="top-bar">
+  <div class="total-badge">Total Issues: <span id="total-count">0</span></div>
+  <div class="row-label"><span id="row-name-label">—</span></div>
+  <div class="top-spacer"></div>
+  <div class="sev-badge medium"><span class="dot medium"></span> Medium <span id="medium-total">0</span></div>
+  <div class="sev-badge high"><span class="dot high"></span> High <span id="high-total">0</span></div>
+</div>
+
+<!-- SCREEN TABS -->
+<div class="screen-tabs-bar">
+  <div class="tabs-scroll-area" id="screen-tabs-bar"></div>
+  <button class="tabs-add-btn" onclick="addScreenTab()">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="6" y1="1" x2="6" y2="11"/><line x1="1" y1="6" x2="11" y2="6"/></svg>
+    Add Screen
+  </button>
+</div>
+
+<!-- MAIN SPLIT -->
+<div class="main">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel" id="left-panel">
+    <div class="issues-header">
+      <button class="btn-collapse" id="panel-toggle-btn" onclick="toggleIssuesPanel()" title="Collapse issues panel">
+        <svg id="panel-toggle-icon" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path d="M8 2L4 6l4 4"/>
+        </svg>
+      </button>
+      <div class="issues-header-inner">
+        <h3>ISSUES (<span id="issue-count">0</span>)</h3>
+        <button class="btn-add-issue" onclick="showAddForm()">+ Add Issue</button>
+      </div>
+    </div>
+    <span class="collapsed-label">Issues</span>
+    <div class="issues-list" id="issues-list"></div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+    <div class="toolbar">
+      <button class="btn-toolbar" onclick="triggerFileUpload()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M7 1v8M4 4l3-3 3 3M2 10v2a1 1 0 001 1h8a1 1 0 001-1v-2"/>
+        </svg>
+        Screenshot
+      </button>
+      <button class="btn-toolbar" id="pin-mode-btn" onclick="togglePinMode()">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="7" cy="6" r="3"/>
+          <path d="M7 9v4"/>
+        </svg>
+        Pin Mode
+      </button>
+      <div class="toolbar-sep"></div>
+      <div class="zoom-controls">
+        <button class="btn-zoom" onclick="zoomOut()" title="Zoom Out">&#8722;</button>
+        <span class="zoom-pct" id="zoom-pct" onclick="zoomReset()" title="Reset to 100%">100%</span>
+        <button class="btn-zoom" onclick="zoomIn()" title="Zoom In">&#43;</button>
+      </div>
+    </div>
+
+    <div class="canvas-area" id="canvas-area">
+      <div class="pin-mode-banner" id="pin-mode-banner">&#128204; Click on the image to drop a pin</div>
+      <div class="canvas-empty" id="canvas-empty">
+        <div class="upload-box" onclick="triggerFileUpload()">
+          <div class="upload-icon">
+            <svg viewBox="0 0 40 40" fill="none" stroke="#00acc1" stroke-width="2">
+              <path d="M20 6v20M12 14l8-8 8 8M6 30v2a3 3 0 003 3h22a3 3 0 003-3v-2"/>
+            </svg>
+          </div>
+          <h4>Upload a screenshot</h4>
+          <p>Click here, drag &amp; drop, or press<br><span class="kbd">Ctrl+V</span> / <span class="kbd">Cmd+V</span> to paste</p>
+          <p style="margin-top:8px;font-size:11px;color:#b2ebf2">Then use <span class="link">Pin Mode</span> to annotate issues</p>
+        </div>
+      </div>
+      <div id="canvas-scroll">
+        <div id="canvas-frame" onclick="handleCanvasClick(event)">
+          <img id="canvas-img" src="" alt="Screenshot" draggable="false"/>
+          <div id="pins-container"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <button class="btn-back" onclick="goBack()">&#8592; Back</button>
+  <span class="bottom-info" id="bottom-info">0 screens &middot; 0 issues</span>
+  <button class="btn-save" onclick="saveAll()">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="1.8">
+      <path d="M2 2h8l2 2v8a1 1 0 01-1 1H3a1 1 0 01-1-1V2z"/>
+      <rect x="4" y="8" width="6" height="4" rx="0.5"/>
+      <rect x="4" y="2" width="5" height="3" rx="0.5"/>
+    </svg>
+    Save
+  </button>
+</div>
+
+<input type="file" id="file-input" accept="image/*" onchange="handleFileUpload(event)"/>
+
+<!-- SHARE MODAL -->
+<div class="share-overlay" id="share-overlay">
+  <div class="share-modal">
+    <div class="share-modal-header">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#80deea" stroke-width="1.6">
+        <circle cx="13" cy="3" r="2"/><circle cx="13" cy="13" r="2"/><circle cx="3" cy="8" r="2"/>
+        <path d="M5 7l6-3M5 9l6 3"/>
+      </svg>
+      <h2>Share Developer Link</h2>
+      <button class="share-modal-close" onclick="closeShareModal()">&#215;</button>
+    </div>
+    <div class="share-modal-body">
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:600;color:#424242;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.4px">Developer Link</div>
+        <div class="share-url-row">
+          <input class="share-url-input" id="share-url-display" readonly value="Generating…" style="font-size:11px"/>
+          <button class="btn-copy-link" id="copy-btn" onclick="copyShareLink()">
+            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6">
+              <rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/>
+            </svg>
+            Copy Link
+          </button>
+        </div>
+        <p style="font-size:11px;color:#9e9e9e;margin-top:6px;line-height:1.5">Copy and share this link with developers. It opens directly in the browser — no Figma account needed.</p>
+      </div>
+
+      <div class="share-divider"></div>
+
+      <div style="display:flex;gap:16px;margin-bottom:4px">
+        <div style="flex:1;text-align:center;padding:12px 8px;background:#f8f9fa;border-radius:8px;border:1px solid #e8e8e8">
+          <div style="font-size:18px;margin-bottom:4px">&#128269;</div>
+          <div style="font-size:11px;font-weight:600;color:#424242">View Issues</div>
+          <div style="font-size:10px;color:#9e9e9e;margin-top:2px">All APL rows &amp; screens</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px 8px;background:#f8f9fa;border-radius:8px;border:1px solid #e8e8e8">
+          <div style="font-size:18px;margin-bottom:4px">&#10003;</div>
+          <div style="font-size:11px;font-weight:600;color:#424242">Close Issues</div>
+          <div style="font-size:10px;color:#9e9e9e;margin-top:2px">Toggle status in browser</div>
+        </div>
+        <div style="flex:1;text-align:center;padding:12px 8px;background:#f8f9fa;border-radius:8px;border:1px solid #e8e8e8">
+          <div style="font-size:18px;margin-bottom:4px">&#128257;</div>
+          <div style="font-size:11px;font-weight:600;color:#424242">Share Back</div>
+          <div style="font-size:10px;color:#9e9e9e;margin-top:2px">Copy updated link</div>
+        </div>
+      </div>
+
+      <div class="share-info-box" style="margin-top:14px">
+        &#128274; <strong>No backend needed.</strong> Issue data is encoded directly in the URL. Screenshots are excluded to keep it short. When developers close issues, they can copy an updated link to send back.
+      </div>
+    </div>
+    <div class="share-modal-footer">
+      <button class="btn-share-close" onclick="closeShareModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+let rowId = '';
+let rowName = '';
+let screens = [];          // Screen[]
+let activeScreenId = '';
+let currentUserName = 'UX Auditor';
+let pinMode = false;
+let editingIssueId = null;
+let formSeverity = 'medium';
+let editingTabId = null;   // which tab is being renamed
+let zoomLevel = 1.0;
+const ZOOM_STEP = 0.25;
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 4.0;
+let _seed = Date.now();
+function genId() { return 's_' + (_seed++) + '_' + Math.random().toString(36).substr(2, 4); }
+
+function activeScreen() { return screens.find(s => s.id === activeScreenId) || screens[0]; }
+
+// ── Init / Share ──────────────────────────────────────────────────────────────
+window.onmessage = (event) => {
+  const msg = event.data.pluginMessage;
+  if (!msg) return;
+
+  if (msg.type === 'share') {
+    showShareModal(msg.payload, msg.viewerUrl || '');
+    return;
+  }
+
+  if (msg.type !== 'init') return;
+
+  rowId = msg.rowId || '';
+  rowName = msg.rowName || '';
+  currentUserName = msg.userName || 'UX Auditor';
+  screens = (msg.screens || []).map(s => ({
+    ...s,
+    issueItems: s.issueItems || [],
+    imageData: s.imageData || '',
+  }));
+
+  // Start with one empty screen if none exist
+  if (screens.length === 0) screens = [makeNewScreen()];
+  activeScreenId = screens[0].id;
+
+  render();
+};
+
+function makeNewScreen() {
+  return {
+    id: genId(),
+    screenName: 'Screen ' + (screens.length + 1),
+    imageData: '',
+    issueItems: [],
+  };
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render() {
+  const scr = activeScreen();
+  if (!scr) return;
+
+  const allIssues = screens.flatMap(s => s.issueItems || []);
+  const scrIssues = scr.issueItems || [];
+
+  document.getElementById('total-count').textContent = allIssues.length;
+  document.getElementById('row-name-label').textContent = rowName || 'Screen';
+  document.getElementById('medium-total').textContent = allIssues.filter(i => i.severity === 'medium').length;
+  document.getElementById('high-total').textContent = allIssues.filter(i => i.severity === 'high').length;
+  document.getElementById('issue-count').textContent = scrIssues.length;
+  document.getElementById('bottom-info').textContent =
+    screens.length + ' screen' + (screens.length !== 1 ? 's' : '') +
+    ' \u00b7 ' + allIssues.length + ' issue' + (allIssues.length !== 1 ? 's' : '');
+
+  renderTabs();
+  renderIssuesList(scr, scrIssues);
+  renderCanvas(scr, scrIssues);
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function renderTabs() {
+  const bar = document.getElementById('screen-tabs-bar');
+  bar.innerHTML = '';
+
+  screens.forEach((scr, i) => {
+    const cnt = (scr.issueItems || []).length;
+    const isActive = scr.id === activeScreenId;
+    const isEditing = scr.id === editingTabId;
+
+    const tab = document.createElement('div');
+    tab.className = 'screen-tab' + (isActive ? ' active' : '');
+
+    if (isEditing) {
+      // Inline name edit mode
+      tab.innerHTML = `
+        <input class="tab-name-input" id="tab-input-${scr.id}"
+          value="${escHtml(scr.screenName)}"
+          onblur="commitTabName('${scr.id}', this.value)"
+          onkeydown="handleTabInputKey(event, '${scr.id}', this.value)"
+          onclick="event.stopPropagation()"
+        />
+        <button class="tab-close" onclick="deleteScreen('${scr.id}')" title="Remove screen">&#215;</button>`;
+      // Focus after render
+      setTimeout(() => {
+        const inp = document.getElementById('tab-input-' + scr.id);
+        if (inp) { inp.focus(); inp.select(); }
+      }, 30);
+    } else {
+      const badge = cnt > 0 ? `<span class="tab-issue-badge">${cnt}</span>` : '';
+      tab.innerHTML = `
+        <span class="tab-name-static" onclick="switchScreen('${scr.id}')">
+          <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:0.45;flex-shrink:0">
+            <rect x="1" y="1" width="10" height="10" rx="2"/>
+          </svg>
+          <span class="tab-name-text" title="${escHtml(scr.screenName)}">${escHtml(scr.screenName)}${badge}</span>
+        </span>
+        <span class="tab-edit-icon" onclick="startEditTabName('${scr.id}')" title="Rename" style="opacity:0;cursor:pointer;font-size:11px;color:#9e9e9e;padding:2px 2px 0;transition:opacity 0.15s">&#9998;</span>
+        <button class="tab-close" onclick="deleteScreen('${scr.id}')" title="Remove screen">&#215;</button>`;
+
+      // Show edit icon on hover via JS (since CSS :hover can't easily target a sibling span)
+      tab.addEventListener('mouseenter', () => {
+        const editIcon = tab.querySelector('.tab-edit-icon');
+        if (editIcon) editIcon.style.opacity = '1';
+      });
+      tab.addEventListener('mouseleave', () => {
+        const editIcon = tab.querySelector('.tab-edit-icon');
+        if (editIcon) editIcon.style.opacity = '0';
+      });
+    }
+
+    bar.appendChild(tab);
+  });
+
+}
+
+function switchScreen(id) {
+  if (activeScreenId === id) return;
+  editingIssueId = null;
+  editingTabId = null;
+  pinMode = false;
+  activeScreenId = id;
+  zoomLevel = 1.0;
+  applyZoom();
+  document.getElementById('pin-mode-btn').classList.remove('active');
+  document.getElementById('pin-mode-banner').style.display = 'none';
+  render();
+}
+
+function addScreenTab() {
+  const newScr = makeNewScreen();
+  screens.push(newScr);
+  editingIssueId = null;
+  editingTabId = newScr.id;   // immediately enter rename mode
+  activeScreenId = newScr.id;
+  zoomLevel = 1.0;
+  applyZoom();
+  document.getElementById('pin-mode-btn').classList.remove('active');
+  document.getElementById('pin-mode-banner').style.display = 'none';
+  render();
+  // Scroll tab bar to end
+  const bar = document.getElementById('screen-tabs-bar');
+  bar.scrollLeft = bar.scrollWidth;
+}
+
+function startEditTabName(id) {
+  editingTabId = id;
+  renderTabs(); // re-render only tabs for speed
+}
+
+function commitTabName(id, value) {
+  const scr = screens.find(s => s.id === id);
+  if (scr) scr.screenName = value.trim() || ('Screen ' + (screens.indexOf(scr) + 1));
+  editingTabId = null;
+  render();
+}
+
+function handleTabInputKey(event, id, value) {
+  if (event.key === 'Enter') { event.preventDefault(); commitTabName(id, value); }
+  if (event.key === 'Escape') { editingTabId = null; renderTabs(); }
+}
+
+function deleteScreen(id) {
+  if (screens.length <= 1) {
+    const scr = screens[0];
+    scr.issueItems = [];
+    scr.imageData = '';
+    scr.screenName = 'Screen 1';
+    editingIssueId = null;
+    editingTabId = null;
+    render();
+    return;
+  }
+  const idx = screens.findIndex(s => s.id === id);
+  screens.splice(idx, 1);
+  if (activeScreenId === id) activeScreenId = screens[Math.max(0, idx - 1)].id;
+  if (editingTabId === id) editingTabId = null;
+  editingIssueId = null;
+  render();
+}
+
+// ── Issues List ───────────────────────────────────────────────────────────────
+function renderIssuesList(scr, issues) {
+  const list = document.getElementById('issues-list');
+  list.innerHTML = '';
+
+  if (editingIssueId === 'new') list.appendChild(buildForm(null));
+
+  if (issues.length === 0 && editingIssueId !== 'new') {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = `
+      <div class="empty-icon">
+        <svg viewBox="0 0 28 28" fill="none" stroke="#b2ebf2" stroke-width="1.8">
+          <rect x="5" y="5" width="18" height="18" rx="3"/>
+          <path d="M9 10h10M9 14h6"/>
+          <circle cx="18" cy="18" r="3" stroke="#00acc1"/>
+          <path d="M16 18h4M18 16v4" stroke="#00acc1"/>
+        </svg>
+      </div>
+      <div class="empty-title">No issues yet</div>
+      <div class="empty-sub">Click "Add Issue" or use<br>Pin Mode to annotate.</div>
+      <button class="btn-add-first" onclick="showAddForm()">+ Add First Issue</button>`;
+    list.appendChild(empty);
+    return;
+  }
+
+  issues.forEach(issue => {
+    list.appendChild(editingIssueId === issue.id ? buildForm(issue) : buildIssueCard(issue));
+  });
+}
+
+function buildIssueCard(issue) {
+  const hasPin = issue.pinX !== undefined && issue.pinY !== undefined;
+  const status = issue.status || 'open';
+  const statusLabel = status === 'closed' ? '✓ Closed' : status === 'in-progress' ? '⟳ In Progress' : '○ Open';
+  const div = document.createElement('div');
+  div.className = 'issue-card' + (hasPin ? ' has-pin' : '') + (status === 'closed' ? ' status-closed' : '');
+  div.innerHTML = `
+    <div class="issue-card-header">
+      <div class="pin-badge" title="${hasPin ? 'Click to jump to pin' : 'No pin placed'}">${issue.pinNumber}</div>
+      <div class="issue-title-text ${status === 'closed' ? 'closed' : ''}">${escHtml(issue.title || 'Untitled issue')}</div>
+      <span class="severity-badge ${issue.severity}">${capitalize(issue.severity)}</span>
+    </div>
+    ${issue.description ? `<div class="issue-desc">${escHtml(issue.description)}</div>` : ''}
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+      <div class="issue-by">by ${escHtml(issue.createdBy || currentUserName)}</div>
+      <span class="issue-status ${status}" onclick="event.stopPropagation();cycleIssueStatus('${issue.id}')" title="Click to change status">${statusLabel}</span>
+    </div>
+    ${hasPin ? `<div class="pin-nav-hint">&#128204; Click to jump to pin on screenshot</div>` : ''}
+    <div class="issue-actions">
+      <button class="issue-btn" onclick="event.stopPropagation();editIssue('${issue.id}')">Edit</button>
+      <button class="issue-btn delete" onclick="event.stopPropagation();deleteIssue('${issue.id}')">Delete</button>
+    </div>`;
+  if (hasPin) {
+    div.addEventListener('click', (e) => {
+      if (!e.target.closest('.issue-btn') && !e.target.closest('.issue-status')) navigateToPin(issue);
+    });
+  }
+  return div;
+}
+
+function buildForm(issue) {
+  const isEdit = issue !== null;
+  const sev = isEdit ? issue.severity : 'medium';
+  formSeverity = sev;
+  const div = document.createElement('div');
+  div.className = 'issue-form';
+  div.innerHTML = `
+    <div class="form-row">
+      <label class="form-label">Issue Title</label>
+      <input class="form-input" id="form-title" type="text" placeholder="Describe the issue..."
+        value="${escHtml(isEdit ? issue.title : '')}"/>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Severity</label>
+      <div class="sev-toggle">
+        <div class="sev-opt medium ${sev === 'medium' ? 'selected' : ''}" onclick="selectSeverity('medium')">Medium</div>
+        <div class="sev-opt high ${sev === 'high' ? 'selected' : ''}" onclick="selectSeverity('high')">High</div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="form-desc" placeholder="Additional details...">${escHtml(isEdit ? issue.description : '')}</textarea>
+    </div>
+    <div class="form-btns">
+      <button class="btn-cancel" onclick="cancelForm()">Cancel</button>
+      <button class="btn-save-issue" onclick="submitForm('${isEdit ? issue.id : 'new'}')">${isEdit ? 'Update Issue' : 'Add Issue'}</button>
+    </div>`;
+  return div;
+}
+
+function selectSeverity(sev) {
+  formSeverity = sev;
+  document.querySelectorAll('.sev-opt').forEach(el => {
+    el.classList.toggle('selected', el.classList.contains(sev));
+  });
+}
+
+// ── Issue CRUD ────────────────────────────────────────────────────────────────
+function showAddForm() {
+  editingIssueId = 'new';
+  formSeverity = 'medium';
+  render();
+  setTimeout(() => { const t = document.getElementById('form-title'); if (t) t.focus(); }, 50);
+}
+
+function editIssue(id) {
+  const issue = (activeScreen().issueItems || []).find(i => i.id === id);
+  if (issue) formSeverity = issue.severity;
+  editingIssueId = id;
+  render();
+}
+
+function deleteIssue(id) {
+  const scr = activeScreen();
+  scr.issueItems = (scr.issueItems || []).filter(i => i.id !== id);
+  scr.issueItems.forEach((item, idx) => { item.pinNumber = idx + 1; });
+  editingIssueId = null;
+  render();
+}
+
+function cancelForm() { editingIssueId = null; render(); }
+
+function cycleIssueStatus(id) {
+  const order = ['open', 'in-progress', 'closed'];
+  const scr = activeScreen();
+  const issue = (scr.issueItems || []).find(i => i.id === id);
+  if (!issue) return;
+  const cur = issue.status || 'open';
+  issue.status = order[(order.indexOf(cur) + 1) % order.length];
+  render();
+  if (scr.imageData) renderPins(scr.issueItems);
+}
+
+function submitForm(idOrNew) {
+  const titleEl = document.getElementById('form-title');
+  const descEl = document.getElementById('form-desc');
+  const title = (titleEl ? titleEl.value.trim() : '') || 'Untitled issue';
+  const desc = descEl ? descEl.value.trim() : '';
+
+  const scr = activeScreen();
+  if (!scr.issueItems) scr.issueItems = [];
+
+  if (idOrNew === 'new') {
+    scr.issueItems.push({
+      id: 'issue_' + genId(),
+      pinNumber: scr.issueItems.length + 1,
+      title, severity: formSeverity, status: 'open', description: desc, createdBy: currentUserName,
+    });
+  } else {
+    const issue = scr.issueItems.find(i => i.id === idOrNew);
+    if (issue) { issue.title = title; issue.severity = formSeverity; issue.description = desc; }
+  }
+
+  editingIssueId = null;
+  render();
+  if (scr.imageData) renderPins(scr.issueItems);
+}
+
+// ── Zoom ──────────────────────────────────────────────────────────────────────
+function applyZoom() {
+  const img = document.getElementById('canvas-img');
+  if (img && img.naturalWidth) {
+    img.style.width  = (img.naturalWidth  * zoomLevel) + 'px';
+    img.style.height = (img.naturalHeight * zoomLevel) + 'px';
+  }
+  document.getElementById('zoom-pct').textContent = Math.round(zoomLevel * 100) + '%';
+}
+
+function zoomIn() {
+  zoomLevel = Math.min(ZOOM_MAX, parseFloat((zoomLevel + ZOOM_STEP).toFixed(2)));
+  applyZoom();
+  const scr = activeScreen();
+  if (scr) renderPins(scr.issueItems || []);
+}
+function zoomOut() {
+  zoomLevel = Math.max(ZOOM_MIN, parseFloat((zoomLevel - ZOOM_STEP).toFixed(2)));
+  applyZoom();
+  const scr = activeScreen();
+  if (scr) renderPins(scr.issueItems || []);
+}
+function zoomReset() {
+  zoomLevel = 1.0;
+  applyZoom();
+  const scr = activeScreen();
+  if (scr) renderPins(scr.issueItems || []);
+}
+
+document.getElementById('canvas-area').addEventListener('wheel', (e) => {
+  if (!e.ctrlKey && !e.metaKey) return;
+  e.preventDefault();
+  if (e.deltaY < 0) zoomIn(); else zoomOut();
+}, { passive: false });
+
+// ── Canvas ────────────────────────────────────────────────────────────────────
+function renderCanvas(scr, issues) {
+  if (scr && scr.imageData) {
+    showImageCanvas(scr.imageData, issues);
+  } else {
+    document.getElementById('canvas-empty').style.display = 'flex';
+    document.getElementById('canvas-scroll').style.display = 'none';
+    document.getElementById('pins-container').innerHTML = '';
+  }
+}
+
+function triggerFileUpload() { document.getElementById('file-input').click(); }
+
+function handleFileUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const scr = activeScreen();
+    scr.imageData = ev.target.result;
+    showImageCanvas(scr.imageData, scr.issueItems || []);
+    render();
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+document.addEventListener('paste', (e) => {
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (let i = 0; i < items.length; i++) {
+    if (items[i].type.indexOf('image') !== -1) {
+      const blob = items[i].getAsFile();
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const scr = activeScreen();
+        scr.imageData = ev.target.result;
+        showImageCanvas(scr.imageData, scr.issueItems || []);
+        render();
+      };
+      reader.readAsDataURL(blob);
+      break;
+    }
+  }
+});
+
+function showImageCanvas(imgData, issues) {
+  document.getElementById('canvas-empty').style.display = 'none';
+  document.getElementById('canvas-scroll').style.display = 'block';
+  const img = document.getElementById('canvas-img');
+  if (img.getAttribute('data-src') !== imgData) {
+    img.setAttribute('data-src', imgData);
+    img.style.width  = '';
+    img.style.height = '';
+    img.onload = () => {
+      applyZoom();
+      renderPins(issues);
+    };
+    img.src = imgData;
+  } else {
+    applyZoom();
+    renderPins(issues);
+  }
+}
+
+function renderPins(issues) {
+  const container = document.getElementById('pins-container');
+  container.innerHTML = '';
+  (issues || []).forEach(function(issue) {
+    if (issue.pinX == null || issue.pinY == null) return;
+    const pin = document.createElement('div');
+    pin.className = 'pin-marker';
+    pin.style.left = (issue.pinX * zoomLevel) + 'px';
+    pin.style.top  = (issue.pinY * zoomLevel) + 'px';
+    pin.textContent = String(issue.pinNumber);
+    pin.title = 'Drag to move · ' + (issue.title || 'Issue #' + issue.pinNumber);
+    makePinDraggable(pin, issue, issues);
+    container.appendChild(pin);
+  });
+}
+
+function makePinDraggable(pin, issue, issues) {
+  var dragging = false;
+
+  pin.addEventListener('mousedown', function(e) {
+    e.stopPropagation(); // don't trigger canvas-frame click (pin placement)
+    e.preventDefault();  // don't start text selection
+
+    dragging = false;
+    const startClientX = e.clientX;
+    const startClientY = e.clientY;
+
+    function onMove(e) {
+      dragging = true;
+      pin.classList.add('dragging');
+
+      // Reposition the pin visually within canvas-frame
+      const frame = document.getElementById('canvas-frame');
+      const frameRect = frame.getBoundingClientRect();
+      pin.style.left = (e.clientX - frameRect.left) + 'px';
+      pin.style.top  = (e.clientY - frameRect.top)  + 'px';
+    }
+
+    function onUp(e) {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+
+      if (!dragging) return; // was a click, not a drag
+      pin.classList.remove('dragging');
+
+      // Calculate new image-space coordinate from drop position
+      const img = document.getElementById('canvas-img');
+      const imgRect = img.getBoundingClientRect();
+      var newX = Math.round((e.clientX - imgRect.left) / zoomLevel);
+      var newY = Math.round((e.clientY - imgRect.top)  / zoomLevel);
+
+      // Clamp within image bounds
+      newX = Math.max(0, Math.min(newX, img.naturalWidth));
+      newY = Math.max(0, Math.min(newY, img.naturalHeight));
+
+      issue.pinX = newX;
+      issue.pinY = newY;
+
+      // Re-render all pins with updated positions
+      renderPins(issues);
+    }
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+}
+
+function navigateToPin(issue) {
+  if (issue.pinX == null || issue.pinY == null) return;
+  const scr = activeScreen();
+  if (!scr || !scr.imageData) return;
+
+  const scroll  = document.getElementById('canvas-scroll');
+  const frame   = document.getElementById('canvas-frame');
+  // frame has margin:20px so its offsetLeft/offsetTop ≈ 20
+  const visualX = frame.offsetLeft + issue.pinX * zoomLevel;
+  const visualY = frame.offsetTop  + issue.pinY * zoomLevel;
+  scroll.scrollLeft = visualX - scroll.clientWidth  / 2;
+  scroll.scrollTop  = visualY - scroll.clientHeight / 2;
+
+  // Pulse the matching pin
+  document.querySelectorAll('.pin-marker').forEach(function(pin) {
+    if (pin.textContent.trim() === String(issue.pinNumber)) {
+      pin.classList.remove('highlighted');
+      void pin.offsetWidth;
+      pin.classList.add('highlighted');
+      setTimeout(function() { pin.classList.remove('highlighted'); }, 1300);
+    }
+  });
+}
+
+// ── Pin Mode ──────────────────────────────────────────────────────────────────
+function togglePinMode() {
+  pinMode = !pinMode;
+  document.getElementById('pin-mode-btn').classList.toggle('active', pinMode);
+  document.getElementById('pin-mode-banner').style.display = pinMode ? 'block' : 'none';
+  const frame = document.getElementById('canvas-frame');
+  if (frame) frame.classList.toggle('pin-active', pinMode);
+}
+
+function handleCanvasClick(e) {
+  if (!pinMode) return;
+  // Ignore clicks on pin markers themselves
+  if (e.target.classList.contains('pin-marker')) return;
+  const scr = activeScreen();
+  if (!scr.issueItems) scr.issueItems = [];
+
+  const img  = document.getElementById('canvas-img');
+  const rect = img.getBoundingClientRect();
+  const x = Math.round((e.clientX - rect.left) / zoomLevel);
+  const y = Math.round((e.clientY - rect.top)  / zoomLevel);
+
+  const unpinned = scr.issueItems.find(i => i.pinX === undefined);
+  if (!unpinned && scr.issueItems.length === 0) { showAddForm(); return; }
+
+  if (unpinned) {
+    unpinned.pinX = x; unpinned.pinY = y;
+  } else {
+    const pinNumber = scr.issueItems.length + 1;
+    scr.issueItems.push({
+      id: 'issue_' + genId(), pinNumber,
+      title: 'Issue #' + pinNumber, severity: 'medium',
+      description: '', createdBy: currentUserName, pinX: x, pinY: y,
+    });
+  }
+
+  renderPins(scr.issueItems);
+  render();
+}
+
+// ── Save / Close ──────────────────────────────────────────────────────────────
+function saveAll() {
+  parent.postMessage({ pluginMessage: { type: 'save', rowId, screens } }, '*');
+}
+
+function goBack() {
+  parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+}
+
+// ── Share Modal ───────────────────────────────────────────────────────────────
+let _sharePayload = null;
+const VIEWER_BASE_URL = 'https://nasdaq-designportal.figma.site/';
+
+function showShareModal(payload, viewerUrl) {
+  _sharePayload = payload;
+  document.getElementById('share-overlay').classList.add('visible');
+  const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
+  const url = VIEWER_BASE_URL + '#' + encoded;
+  document.getElementById('share-url-display').value = url;
+}
+
+function closeShareModal() {
+  document.getElementById('share-overlay').classList.remove('visible');
+  parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
+}
+
+function copyShareLink() {
+  const url = document.getElementById('share-url-display').value;
+  if (!url) return;
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('copy-btn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/></svg> Copy Link';
+      btn.classList.remove('copied');
+    }, 2500);
+  });
+}
+
+// ── Issues Panel Collapse ─────────────────────────────────────────────────────
+let issuesPanelCollapsed = false;
+function toggleIssuesPanel() {
+  issuesPanelCollapsed = !issuesPanelCollapsed;
+  const panel = document.getElementById('left-panel');
+  const icon  = document.getElementById('panel-toggle-icon');
+  if (issuesPanelCollapsed) {
+    panel.classList.add('collapsed');
+    // Chevron pointing right (expand)
+    icon.innerHTML = '<path d="M4 2l4 4-4 4"/>';
+    document.getElementById('panel-toggle-btn').title = 'Expand issues panel';
+  } else {
+    panel.classList.remove('collapsed');
+    // Chevron pointing left (collapse)
+    icon.innerHTML = '<path d="M8 2L4 6l4 4"/>';
+    document.getElementById('panel-toggle-btn').title = 'Collapse issues panel';
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+</script>
+</body>
+</html>

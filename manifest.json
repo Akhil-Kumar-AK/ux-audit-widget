@@ -1,0 +1,11 @@
+{
+  "name": "UX Audit Tracker",
+  "id": "ux-audit-tracker-widget-v1",
+  "api": "1.0.0",
+  "widgetApi": "1.0.0",
+  "containsWidget": true,
+  "main": "dist/code.js",
+  "editorType": ["figma", "figjam"],
+  "ui": "ui.html",
+  "permissions": ["currentuser"]
+}
