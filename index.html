@@ -126,7 +126,7 @@ body{background:#f4f6f8;min-height:100vh;color:#212121;font-size:13px}
       <rect x="4" y="4" width="8" height="8" rx="1.5"/>
       <path d="M2 10V3a1 1 0 011-1h7"/>
     </svg>
-    Copy Updated Link
+    Copy Link
   </button>
 </header>
 
@@ -143,37 +143,71 @@ body{background:#f4f6f8;min-height:100vh;color:#212121;font-size:13px}
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Decode payload ─────────────────────────────────────────────────────────
+// ── Live Gist Fetch ────────────────────────────────────────────────────────
 var payload = null;
 var activeTabKey = 'service';
+var REFRESH_INTERVAL = 30000; // 30 seconds
 
-try {
-  var hash = location.hash.replace(/^#/, '');
-  if (hash) {
-    payload = JSON.parse(decodeURIComponent(atob(hash)));
-  }
-} catch(e) {
-  console.error('Failed to decode payload', e);
+var params = new URLSearchParams(location.search);
+var gistId = params.get('gist');
+
+function showLoading(msg) {
+  document.getElementById('content').innerHTML =
+    '<div class="empty-state"><h2>' + (msg || 'Loading…') + '</h2><p>Fetching latest data from Figma widget…</p></div>';
+  document.getElementById('gen-date').textContent = 'Fetching…';
 }
 
-if (!payload) {
-  document.getElementById('content').innerHTML = `
-    <div class="empty-state">
-      <h2>No audit data found</h2>
-      <p>This link may be expired or invalid.<br>Ask the UX designer to generate a new share link from the Figma widget.</p>
-    </div>`;
-  document.getElementById('gen-date').textContent = 'Invalid link';
+function showError(msg) {
+  document.getElementById('content').innerHTML =
+    '<div class="empty-state"><h2>Could not load data</h2><p>' + msg + '</p></div>';
+  document.getElementById('gen-date').textContent = 'Error';
   document.getElementById('stats-bar').innerHTML = '';
   document.getElementById('tabs-bar').innerHTML = '';
-} else {
+}
+
+function fetchAndRender(isRefresh) {
+  if (!gistId) { showError('No gist ID in URL. Use the <strong>Create Link</strong> button in Figma.'); return; }
+  if (!isRefresh) showLoading();
+  fetch('https://api.github.com/gists/' + gistId, { cache: 'no-store' })
+    .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+    .then(function(data) {
+      var file = data.files && data.files['ux-audit-data.json'];
+      if (!file) throw new Error('No audit data file in gist');
+      var parsed = JSON.parse(file.content);
+      if (parsed.initialized && !parsed.serviceRows) throw new Error('Awaiting first sync from Figma');
+      payload = parsed;
+      applyPayload(isRefresh);
+      updateLiveIndicator();
+    })
+    .catch(function(e) {
+      if (!isRefresh) showError(String(e));
+      else updateLiveIndicator(String(e));
+    });
+}
+
+function applyPayload(silent) {
   document.getElementById('page-title').textContent = payload.projectTitle || 'UX Audit Review';
   document.getElementById('page-subtitle').textContent = (payload.projectSubtitle || '') + ' — Developer View';
-  document.getElementById('gen-date').textContent = 'Generated ' + (payload.generatedAt || '');
-
   renderTabs();
   renderStats();
   renderContent();
 }
+
+function updateLiveIndicator(err) {
+  var now = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  var badge = document.getElementById('gen-date');
+  if (err) {
+    badge.textContent = 'Refresh failed ' + now;
+    badge.style.background = 'rgba(198,40,40,0.2)';
+  } else {
+    badge.innerHTML = '🟢 Live &nbsp;·&nbsp; Updated ' + (payload.updatedAt || now);
+    badge.style.background = 'rgba(0,172,193,0.2)';
+  }
+}
+
+// Initial load + start polling
+fetchAndRender(false);
+setInterval(function() { fetchAndRender(true); }, REFRESH_INTERVAL);
 
 // ── Tabs ──────────────────────────────────────────────────────────────────
 function renderTabs() {
@@ -365,22 +399,17 @@ function cycleStatus(issueId, scrId) {
 }
 
 function copyUpdatedLink() {
-  try {
-    var encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
-    var url = 'https://akhil-kumar-ak.github.io/ux-audit-widget/' + '#' + encoded;
-    navigator.clipboard.writeText(url).then(function() {
-      var btn = document.getElementById('copy-link-btn');
-      btn.textContent = '✓ Copied!';
-      btn.classList.add('copied');
-      showToast('Updated link copied to clipboard');
-      setTimeout(function() {
-        btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/></svg> Copy Updated Link';
-        btn.classList.remove('copied');
-      }, 2500);
-    });
-  } catch(e) {
-    showToast('Could not copy — try right-clicking the address bar');
-  }
+  var url = location.href;
+  navigator.clipboard.writeText(url).then(function() {
+    var btn = document.getElementById('copy-link-btn');
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    showToast('Link copied — same URL, always live data');
+    setTimeout(function() {
+      btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/></svg> Copy Link';
+      btn.classList.remove('copied');
+    }, 2500);
+  });
 }
 
 function showToast(msg) {

@@ -310,42 +310,48 @@
     </div>
     <div class="share-modal-body">
 
+      <!-- Permanent link -->
       <div style="margin-bottom:14px">
-        <div style="font-size:11px;font-weight:600;color:#424242;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.4px">Developer Link</div>
+        <div style="font-size:11px;font-weight:600;color:#424242;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px">Developer Link — Permanent</div>
         <div class="share-url-row">
-          <input class="share-url-input" id="share-url-display" readonly value="Generating…" style="font-size:11px"/>
+          <input class="share-url-input" id="share-url-display" readonly value="" style="font-size:11px"/>
           <button class="btn-copy-link" id="copy-btn" onclick="copyShareLink()">
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6">
               <rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/>
             </svg>
-            Copy Link
+            Copy
           </button>
         </div>
-        <p style="font-size:11px;color:#9e9e9e;margin-top:6px;line-height:1.5">Copy and share this link with developers. It opens directly in the browser — no Figma account needed.</p>
+        <p style="font-size:11px;color:#9e9e9e;margin-top:5px">This link never changes. The viewer always shows the latest data from your Gist.</p>
       </div>
 
       <div class="share-divider"></div>
 
-      <div style="display:flex;gap:16px;margin-bottom:4px">
-        <div style="flex:1;text-align:center;padding:12px 8px;background:#f8f9fa;border-radius:8px;border:1px solid #e8e8e8">
-          <div style="font-size:18px;margin-bottom:4px">&#128269;</div>
-          <div style="font-size:11px;font-weight:600;color:#424242">View Issues</div>
-          <div style="font-size:10px;color:#9e9e9e;margin-top:2px">All APL rows &amp; screens</div>
+      <!-- GitHub Token setup -->
+      <div style="margin-bottom:14px">
+        <div style="font-size:11px;font-weight:600;color:#424242;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px">GitHub Token (one-time setup)</div>
+        <div class="share-viewer-row">
+          <input class="share-viewer-input" id="share-token-input" type="password" placeholder="ghp_xxxx or gho_xxxx"/>
+          <button class="btn-save-url" onclick="saveShareToken()">Save</button>
         </div>
-        <div style="flex:1;text-align:center;padding:12px 8px;background:#f8f9fa;border-radius:8px;border:1px solid #e8e8e8">
-          <div style="font-size:18px;margin-bottom:4px">&#10003;</div>
-          <div style="font-size:11px;font-weight:600;color:#424242">Close Issues</div>
-          <div style="font-size:10px;color:#9e9e9e;margin-top:2px">Toggle status in browser</div>
-        </div>
-        <div style="flex:1;text-align:center;padding:12px 8px;background:#f8f9fa;border-radius:8px;border:1px solid #e8e8e8">
-          <div style="font-size:18px;margin-bottom:4px">&#128257;</div>
-          <div style="font-size:11px;font-weight:600;color:#424242">Share Back</div>
-          <div style="font-size:10px;color:#9e9e9e;margin-top:2px">Copy updated link</div>
-        </div>
+        <p style="font-size:11px;color:#9e9e9e;margin-top:4px;line-height:1.5">Run <code style="background:#f0f0f0;padding:1px 5px;border-radius:3px;font-size:11px">gh auth token</code> in your terminal and paste here. Needs <strong>gist</strong> scope. Saved to widget only, never in the repo.</p>
       </div>
 
-      <div class="share-info-box" style="margin-top:14px">
-        &#128274; <strong>No backend needed.</strong> Issue data is encoded directly in the URL. Screenshots are excluded to keep it short. When developers close issues, they can copy an updated link to send back.
+      <div class="share-divider"></div>
+
+      <!-- Sync status + button -->
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="share-sync-status" style="flex:1;font-size:12px;display:flex;align-items:center"></div>
+        <button class="btn-copy-link" onclick="syncNow()" style="background:#1976d2;white-space:nowrap">
+          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M13 2v4H9M1 12V8h4"/><path d="M2.5 5A5.5 5.5 0 0112 8M11.5 9A5.5 5.5 0 012 6"/>
+          </svg>
+          Sync Now
+        </button>
+      </div>
+
+      <div class="share-info-box" style="margin-top:12px;font-size:11px">
+        <strong>How real-time works:</strong> Every time you save issues in Figma, data is automatically pushed to a GitHub Gist. The viewer fetches fresh data every 30 seconds — developers always see the latest.
       </div>
     </div>
     <div class="share-modal-footer">
@@ -358,21 +364,34 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 let rowId = '';
 let rowName = '';
-let screens = [];          // Screen[]
+let screens = [];
 let activeScreenId = '';
 let currentUserName = 'UX Auditor';
 let pinMode = false;
 let editingIssueId = null;
 let formSeverity = 'medium';
-let editingTabId = null;   // which tab is being renamed
+let editingTabId = null;
 let zoomLevel = 1.0;
 const ZOOM_STEP = 0.25;
 const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 4.0;
+let _gistId = '';
+let _githubToken = '';
 let _seed = Date.now();
 function genId() { return 's_' + (_seed++) + '_' + Math.random().toString(36).substr(2, 4); }
 
 function activeScreen() { return screens.find(s => s.id === activeScreenId) || screens[0]; }
+
+// ── Gist sync helper ──────────────────────────────────────────────────────────
+function pushToGist(gistId, token, payload) {
+  if (!gistId || !token) return Promise.resolve();
+  const body = JSON.stringify({ files: { 'ux-audit-data.json': { content: JSON.stringify(payload) } } });
+  return fetch('https://api.github.com/gists/' + gistId, {
+    method: 'PATCH',
+    headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json' },
+    body,
+  }).then(r => r.ok ? r.json() : Promise.reject(r.status));
+}
 
 // ── Init / Share ──────────────────────────────────────────────────────────────
 window.onmessage = (event) => {
@@ -380,7 +399,15 @@ window.onmessage = (event) => {
   if (!msg) return;
 
   if (msg.type === 'share') {
-    showShareModal(msg.payload, msg.viewerUrl || '');
+    _gistId = msg.gistId || '';
+    _githubToken = msg.githubToken || '';
+    showShareModal(msg.payload, msg.gistId, msg.githubToken);
+    return;
+  }
+
+  if (msg.type === 'gist-sync') {
+    pushToGist(msg.gistId, msg.githubToken, msg.payload)
+      .finally(() => parent.postMessage({ pluginMessage: { type: 'gist-sync-done' } }, '*'));
     return;
   }
 
@@ -389,13 +416,14 @@ window.onmessage = (event) => {
   rowId = msg.rowId || '';
   rowName = msg.rowName || '';
   currentUserName = msg.userName || 'UX Auditor';
+  _gistId = msg.gistId || '';
+  _githubToken = msg.githubToken || '';
   screens = (msg.screens || []).map(s => ({
     ...s,
     issueItems: s.issueItems || [],
     imageData: s.imageData || '',
   }));
 
-  // Start with one empty screen if none exist
   if (screens.length === 0) screens = [makeNewScreen()];
   activeScreenId = screens[0].id;
 
@@ -953,15 +981,46 @@ function goBack() {
 }
 
 // ── Share Modal ───────────────────────────────────────────────────────────────
-let _sharePayload = null;
 const VIEWER_BASE_URL = 'https://akhil-kumar-ak.github.io/ux-audit-widget/';
+let _sharePayload = null;
 
-function showShareModal(payload, viewerUrl) {
+function showShareModal(payload, gistId, token) {
   _sharePayload = payload;
-  document.getElementById('share-overlay').classList.add('visible');
-  const encoded = btoa(encodeURIComponent(JSON.stringify(payload)));
-  const url = VIEWER_BASE_URL + '#' + encoded;
+  const url = VIEWER_BASE_URL + '?gist=' + gistId;
   document.getElementById('share-url-display').value = url;
+  const tokenInput = document.getElementById('share-token-input');
+  if (tokenInput) tokenInput.value = token || '';
+  setShareStatus(token ? 'ready' : 'no-token');
+  document.getElementById('share-overlay').classList.add('visible');
+}
+
+function setShareStatus(state, msg) {
+  const el = document.getElementById('share-sync-status');
+  if (!el) return;
+  const map = {
+    'ready':    { icon: '🟢', text: 'Ready to sync', color: '#2e7d32' },
+    'no-token': { icon: '⚠️', text: 'Enter GitHub token to enable live sync', color: '#f57c00' },
+    'syncing':  { icon: '⟳', text: 'Syncing…', color: '#0288d1' },
+    'done':     { icon: '✓', text: msg || 'Synced successfully', color: '#2e7d32' },
+    'error':    { icon: '✕', text: msg || 'Sync failed', color: '#c62828' },
+  };
+  const s = map[state] || map['ready'];
+  el.innerHTML = '<span style="margin-right:5px">' + s.icon + '</span><span style="color:' + s.color + ';font-weight:600">' + s.text + '</span>';
+}
+
+function saveShareToken() {
+  const token = document.getElementById('share-token-input').value.trim();
+  _githubToken = token;
+  parent.postMessage({ pluginMessage: { type: 'save-github-token', token } }, '*');
+  setShareStatus(token ? 'ready' : 'no-token');
+}
+
+function syncNow() {
+  if (!_githubToken || !_sharePayload) { setShareStatus('no-token'); return; }
+  setShareStatus('syncing');
+  pushToGist(_gistId, _githubToken, _sharePayload)
+    .then(() => setShareStatus('done', 'Synced! Viewer is now live.'))
+    .catch((e) => setShareStatus('error', 'Sync failed: ' + e));
 }
 
 function closeShareModal() {

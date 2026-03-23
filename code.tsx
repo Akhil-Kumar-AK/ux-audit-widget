@@ -565,6 +565,10 @@ function Widget() {
   const [serviceRows, setServiceRows] = useSyncedState<Row[]>('serviceRows', INIT_SERVICE_ROWS);
   const [frameworkRows, setFrameworkRows] = useSyncedState<Row[]>('frameworkRows', INIT_FRAMEWORK_ROWS);
 
+  // GitHub sync
+  const GIST_ID = 'a764fa0f1ec5de34433edfac81620203';
+  const [githubToken, setGithubToken] = useSyncedState('githubToken', '');
+
   // Left sidebar state
   const [startDate, setStartDate] = useSyncedState('startDate', 'Jan 01 2025');
   const [endDate, setEndDate] = useSyncedState('endDate', 'Jan 29 2025');
@@ -707,17 +711,19 @@ function Widget() {
             }));
             figma.ui.postMessage({
               type: 'share',
-              viewerUrl: 'https://akhil-kumar-ak.github.io/ux-audit-widget/',
+              gistId: GIST_ID,
+              githubToken,
               payload: {
                 projectTitle,
                 projectSubtitle,
-                generatedAt: dateStr,
+                updatedAt: dateStr,
                 serviceRows: stripImages(serviceRows),
                 frameworkRows: stripImages(frameworkRows),
               },
             });
             figma.ui.onmessage = (msg: any) => {
-              if (msg.type === 'close') resolve();
+              if (msg.type === 'close' || msg.type === 'gist-sync-done') resolve();
+              if (msg.type === 'save-github-token') { setGithubToken(msg.token || ''); }
             };
           })}
           padding={{ horizontal: 14, vertical: 8 }}
@@ -982,7 +988,7 @@ function Widget() {
                     if (msg.type === 'save') {
                       const savedScreens: Screen[] = msg.screens || [];
                       const allIssues = savedScreens.reduce((acc: IssueItem[], s: Screen) => acc.concat(s.issueItems || []), []);
-                      setRows(rows.map((r) => {
+                      const updatedRows = rows.map((r) => {
                         if (r.id === msg.rowId) {
                           return {
                             ...r,
@@ -993,9 +999,33 @@ function Widget() {
                           };
                         }
                         return r;
-                      }));
+                      });
+                      setRows(updatedRows);
+                      // Auto-sync to gist if token configured
+                      if (githubToken) {
+                        const stripImages = (rs: Row[]) => rs.map(r => ({
+                          ...r, screens: (r.screens || []).map(s => ({ ...s, imageData: '' })),
+                        }));
+                        const now = new Date();
+                        figma.ui.postMessage({
+                          type: 'gist-sync',
+                          gistId: GIST_ID,
+                          githubToken,
+                          payload: {
+                            projectTitle,
+                            projectSubtitle,
+                            updatedAt: now.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+                            serviceRows: activeTab === 'service' ? stripImages(updatedRows) : stripImages(serviceRows),
+                            frameworkRows: activeTab === 'framework' ? stripImages(updatedRows) : stripImages(frameworkRows),
+                          },
+                        });
+                      } else {
+                        resolve();
+                      }
+                    } else if (msg.type === 'gist-sync-done' || msg.type === 'close') {
                       resolve();
-                    } else if (msg.type === 'close') {
+                    } else if (msg.type === 'save-github-token') {
+                      setGithubToken(msg.token || '');
                       resolve();
                     }
                   };
@@ -1005,6 +1035,8 @@ function Widget() {
                     rowName: row.screenName || row.aplNo,
                     screens: row.screens || [],
                     userName: figma.currentUser ? figma.currentUser.name : 'UX Auditor',
+                    gistId: GIST_ID,
+                    githubToken,
                   });
                 })}
               />
