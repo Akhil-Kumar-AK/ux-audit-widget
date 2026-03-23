@@ -161,36 +161,6 @@
   .btn-save{background:#00acc1;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
   .btn-save:hover{background:#00838f}
 
-  /* SHARE MODAL */
-  .share-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:999;display:none}
-  .share-overlay.visible{display:flex}
-  .share-modal{background:#fff;border-radius:12px;width:480px;box-shadow:0 8px 40px rgba(0,0,0,0.18);overflow:hidden}
-  .share-modal-header{display:flex;align-items:center;gap:12px;padding:16px 20px;background:linear-gradient(90deg,#000,#0090ba);border-bottom:1px solid #e0e0e0}
-  .share-modal-header h2{font-size:14px;font-weight:700;color:#fff;flex:1}
-  .share-modal-close{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:20px;line-height:1;padding:0}
-  .share-modal-close:hover{color:#fff}
-  .share-modal-body{padding:20px}
-  .share-step{display:flex;gap:12px;margin-bottom:16px}
-  .share-step-num{width:24px;height:24px;border-radius:50%;background:#00acc1;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
-  .share-step-content label{display:block;font-size:12px;font-weight:600;color:#424242;margin-bottom:6px}
-  .share-step-content p{font-size:11px;color:#9e9e9e;line-height:1.5;margin-top:4px}
-  .share-url-row{display:flex;gap:6px}
-  .share-url-input{flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:8px 10px;font-size:11px;color:#212121;outline:none;font-family:monospace;background:#f8f9fa}
-  .share-url-input:focus{border-color:#00acc1;background:#fff}
-  .btn-copy-link{background:#00acc1;color:#fff;border:none;border-radius:6px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;flex-shrink:0}
-  .btn-copy-link:hover{background:#00838f}
-  .btn-copy-link.copied{background:#2e7d32}
-  .share-viewer-row{display:flex;gap:6px;margin-bottom:4px}
-  .share-viewer-input{flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:7px 10px;font-size:12px;color:#212121;outline:none}
-  .share-viewer-input:focus{border-color:#00acc1;box-shadow:0 0 0 2px rgba(0,172,193,0.12)}
-  .btn-save-url{background:#f5f5f5;border:1px solid #e0e0e0;color:#424242;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0}
-  .btn-save-url:hover{background:#e0f7fa;border-color:#00acc1;color:#00838f}
-  .share-divider{height:1px;background:#f0f0f0;margin:16px 0}
-  .share-info-box{background:#f0fafb;border:1px solid #b2ebf2;border-radius:8px;padding:12px;font-size:11px;color:#00838f;line-height:1.6}
-  .share-info-box strong{font-weight:700}
-  .share-modal-footer{display:flex;justify-content:flex-end;padding:12px 20px;border-top:1px solid #f0f0f0}
-  .btn-share-close{background:#00acc1;color:#fff;border:none;border-radius:6px;padding:8px 20px;font-size:12px;font-weight:600;cursor:pointer}
-  .btn-share-close:hover{background:#00838f}
 </style>
 </head>
 <body>
@@ -297,69 +267,6 @@
 
 <input type="file" id="file-input" accept="image/*" onchange="handleFileUpload(event)"/>
 
-<!-- SHARE MODAL -->
-<div class="share-overlay" id="share-overlay">
-  <div class="share-modal">
-    <div class="share-modal-header">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#80deea" stroke-width="1.6">
-        <circle cx="13" cy="3" r="2"/><circle cx="13" cy="13" r="2"/><circle cx="3" cy="8" r="2"/>
-        <path d="M5 7l6-3M5 9l6 3"/>
-      </svg>
-      <h2>Share Developer Link</h2>
-      <button class="share-modal-close" onclick="closeShareModal()">&#215;</button>
-    </div>
-    <div class="share-modal-body">
-
-      <!-- Permanent link -->
-      <div style="margin-bottom:14px">
-        <div style="font-size:11px;font-weight:600;color:#424242;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px">Developer Link — Permanent</div>
-        <div class="share-url-row">
-          <input class="share-url-input" id="share-url-display" readonly value="" style="font-size:11px"/>
-          <button class="btn-copy-link" id="copy-btn" onclick="copyShareLink()">
-            <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6">
-              <rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/>
-            </svg>
-            Copy
-          </button>
-        </div>
-        <p style="font-size:11px;color:#9e9e9e;margin-top:5px">This link never changes. The viewer always shows the latest data from your Gist.</p>
-      </div>
-
-      <div class="share-divider"></div>
-
-      <!-- GitHub Token setup -->
-      <div style="margin-bottom:14px">
-        <div style="font-size:11px;font-weight:600;color:#424242;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.4px">GitHub Token (one-time setup)</div>
-        <div class="share-viewer-row">
-          <input class="share-viewer-input" id="share-token-input" type="password" placeholder="ghp_xxxx or gho_xxxx"/>
-          <button class="btn-save-url" onclick="saveShareToken()">Save</button>
-        </div>
-        <p style="font-size:11px;color:#9e9e9e;margin-top:4px;line-height:1.5">Run <code style="background:#f0f0f0;padding:1px 5px;border-radius:3px;font-size:11px">gh auth token</code> in your terminal and paste here. Needs <strong>gist</strong> scope. Saved to widget only, never in the repo.</p>
-      </div>
-
-      <div class="share-divider"></div>
-
-      <!-- Sync status + button -->
-      <div style="display:flex;align-items:center;gap:10px">
-        <div id="share-sync-status" style="flex:1;font-size:12px;display:flex;align-items:center"></div>
-        <button class="btn-copy-link" onclick="syncNow()" style="background:#1976d2;white-space:nowrap">
-          <svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8">
-            <path d="M13 2v4H9M1 12V8h4"/><path d="M2.5 5A5.5 5.5 0 0112 8M11.5 9A5.5 5.5 0 012 6"/>
-          </svg>
-          Sync Now
-        </button>
-      </div>
-
-      <div class="share-info-box" style="margin-top:12px;font-size:11px">
-        <strong>How real-time works:</strong> Every time you save issues in Figma, data is automatically pushed to a GitHub Gist. The viewer fetches fresh data every 30 seconds — developers always see the latest.
-      </div>
-    </div>
-    <div class="share-modal-footer">
-      <button class="btn-share-close" onclick="closeShareModal()">Done</button>
-    </div>
-  </div>
-</div>
-
 <script>
 // ── State ─────────────────────────────────────────────────────────────────────
 let rowId = '';
@@ -375,49 +282,19 @@ let zoomLevel = 1.0;
 const ZOOM_STEP = 0.25;
 const ZOOM_MIN = 0.25;
 const ZOOM_MAX = 4.0;
-let _gistId = '';
-let _githubToken = '';
 let _seed = Date.now();
 function genId() { return 's_' + (_seed++) + '_' + Math.random().toString(36).substr(2, 4); }
 
 function activeScreen() { return screens.find(s => s.id === activeScreenId) || screens[0]; }
 
-// ── Gist sync helper ──────────────────────────────────────────────────────────
-function pushToGist(gistId, token, payload) {
-  if (!gistId || !token) return Promise.resolve();
-  const body = JSON.stringify({ files: { 'ux-audit-data.json': { content: JSON.stringify(payload) } } });
-  return fetch('https://api.github.com/gists/' + gistId, {
-    method: 'PATCH',
-    headers: { 'Authorization': 'token ' + token, 'Content-Type': 'application/json' },
-    body,
-  }).then(r => r.ok ? r.json() : Promise.reject(r.status));
-}
-
-// ── Init / Share ──────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 window.onmessage = (event) => {
   const msg = event.data.pluginMessage;
-  if (!msg) return;
-
-  if (msg.type === 'share') {
-    _gistId = msg.gistId || '';
-    _githubToken = msg.githubToken || '';
-    showShareModal(msg.payload, msg.gistId, msg.githubToken);
-    return;
-  }
-
-  if (msg.type === 'gist-sync') {
-    pushToGist(msg.gistId, msg.githubToken, msg.payload)
-      .finally(() => parent.postMessage({ pluginMessage: { type: 'gist-sync-done' } }, '*'));
-    return;
-  }
-
-  if (msg.type !== 'init') return;
+  if (!msg || msg.type !== 'init') return;
 
   rowId = msg.rowId || '';
   rowName = msg.rowName || '';
   currentUserName = msg.userName || 'UX Auditor';
-  _gistId = msg.gistId || '';
-  _githubToken = msg.githubToken || '';
   screens = (msg.screens || []).map(s => ({
     ...s,
     issueItems: s.issueItems || [],
@@ -978,68 +855,6 @@ function saveAll() {
 
 function goBack() {
   parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
-}
-
-// ── Share Modal ───────────────────────────────────────────────────────────────
-const VIEWER_BASE_URL = 'https://akhil-kumar-ak.github.io/ux-audit-widget/';
-let _sharePayload = null;
-
-function showShareModal(payload, gistId, token) {
-  _sharePayload = payload;
-  const url = VIEWER_BASE_URL + '?gist=' + gistId;
-  document.getElementById('share-url-display').value = url;
-  const tokenInput = document.getElementById('share-token-input');
-  if (tokenInput) tokenInput.value = token || '';
-  setShareStatus(token ? 'ready' : 'no-token');
-  document.getElementById('share-overlay').classList.add('visible');
-}
-
-function setShareStatus(state, msg) {
-  const el = document.getElementById('share-sync-status');
-  if (!el) return;
-  const map = {
-    'ready':    { icon: '🟢', text: 'Ready to sync', color: '#2e7d32' },
-    'no-token': { icon: '⚠️', text: 'Enter GitHub token to enable live sync', color: '#f57c00' },
-    'syncing':  { icon: '⟳', text: 'Syncing…', color: '#0288d1' },
-    'done':     { icon: '✓', text: msg || 'Synced successfully', color: '#2e7d32' },
-    'error':    { icon: '✕', text: msg || 'Sync failed', color: '#c62828' },
-  };
-  const s = map[state] || map['ready'];
-  el.innerHTML = '<span style="margin-right:5px">' + s.icon + '</span><span style="color:' + s.color + ';font-weight:600">' + s.text + '</span>';
-}
-
-function saveShareToken() {
-  const token = document.getElementById('share-token-input').value.trim();
-  _githubToken = token;
-  parent.postMessage({ pluginMessage: { type: 'save-github-token', token } }, '*');
-  setShareStatus(token ? 'ready' : 'no-token');
-}
-
-function syncNow() {
-  if (!_githubToken || !_sharePayload) { setShareStatus('no-token'); return; }
-  setShareStatus('syncing');
-  pushToGist(_gistId, _githubToken, _sharePayload)
-    .then(() => setShareStatus('done', 'Synced! Viewer is now live.'))
-    .catch((e) => setShareStatus('error', 'Sync failed: ' + e));
-}
-
-function closeShareModal() {
-  document.getElementById('share-overlay').classList.remove('visible');
-  parent.postMessage({ pluginMessage: { type: 'close' } }, '*');
-}
-
-function copyShareLink() {
-  const url = document.getElementById('share-url-display').value;
-  if (!url) return;
-  navigator.clipboard.writeText(url).then(() => {
-    const btn = document.getElementById('copy-btn');
-    btn.textContent = '✓ Copied!';
-    btn.classList.add('copied');
-    setTimeout(() => {
-      btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="4" width="8" height="8" rx="1.5"/><path d="M2 10V3a1 1 0 011-1h7"/></svg> Copy Link';
-      btn.classList.remove('copied');
-    }, 2500);
-  });
 }
 
 // ── Issues Panel Collapse ─────────────────────────────────────────────────────
